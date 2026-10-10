@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Phone Mirror
+Name[vi]=Phản chiếu Màn hình Điện thoại
+Comment=Mirror Android phone screen at 60 FPS low latency
+Comment[vi]=Phản chiếu màn hình điện thoại mượt mà 60 FPS chống giật
+Exec=phone
+Icon=phone
+Terminal=false
+Type=Application
+Categories=Utility;System;
+Keywords=android;scrcpy;mirror;screen;

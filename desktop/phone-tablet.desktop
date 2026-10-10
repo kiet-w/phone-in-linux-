@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Phone Tablet Mode
+Name[vi]=Điện thoại Chế độ Tablet
+Comment=Transform phone screen into landscape tablet 2400x1080
+Comment[vi]=Chuyển giao diện điện thoại sang Máy tính bảng ngang 2400x1080
+Exec=phone-tablet
+Icon=tablet
+Terminal=false
+Type=Application
+Categories=Utility;System;
+Keywords=android;scrcpy;tablet;

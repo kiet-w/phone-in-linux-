@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Phone Dual Screen
+Name[vi]=Màn hình Phụ Điện thoại
+Comment=Launch Android app on independent virtual secondary display with responsive flex
+Comment[vi]=Mở ứng dụng Android trên màn hình phụ độc lập (co giãn tự do, không viền)
+Exec=phone-dual
+Icon=phone
+Terminal=true
+Type=Application
+Categories=Utility;System;
+Keywords=android;scrcpy;dual;screen;mirror;
