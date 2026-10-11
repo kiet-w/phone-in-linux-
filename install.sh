@@ -69,6 +69,8 @@ ln -sf "$SCRIPT_DIR/bin/phone-tablet.sh" "$HOME/.local/bin/phone-tablet"
 ln -sf "$SCRIPT_DIR/bin/phone-reset.sh" "$HOME/.local/bin/phone-reset"
 ln -sf "$SCRIPT_DIR/bin/phone-clip.sh" "$HOME/.local/bin/phone-clip"
 ln -sf "$SCRIPT_DIR/bin/phone-clip.sh" "$HOME/.local/bin/phone-paste"
+ln -sf "$SCRIPT_DIR/bin/phone-snap.sh" "$HOME/.local/bin/phone-snap"
+ln -sf "$SCRIPT_DIR/bin/optimize-phone.sh" "$HOME/.local/bin/optimize-phone"
 
 # Đảm bảo ~/.local/bin nằm trong PATH
 SHELL_RC="$HOME/.bashrc"
@@ -101,6 +103,8 @@ echo -e "  - ${GREEN}phone${NC}             : Phản chiếu màn hình điện 
 echo -e "  - ${GREEN}phone-tablet${NC}      : Chuyển sang giao diện Máy tính bảng (Tablet ngang 2400x1080)"
 echo -e "  - ${GREEN}phone-reset${NC}       : Khôi phục màn hình điện thoại về cài đặt gốc"
 echo -e "  - ${GREEN}phone-clip${NC}        : Gửi ảnh chụp màn hình / clipboard từ laptop sang điện thoại"
+echo -e "  - ${GREEN}phone-snap${NC}        : Chụp ảnh màn hình điện thoại từ máy tính lưu vào ~/Pictures/Phone"
+echo -e "  - ${GREEN}optimize-phone${NC}    : Tối ưu 120Hz, tắt Joyose, giảm animation cho Xiaomi HyperOS"
 echo -e "\n💡 Mẹo âm thanh cho phone-dual & phone:"
 echo -e "  - Mặc định: Phát trực tiếp trên Loa Điện Thoại"
 echo -e "  - Thêm ${YELLOW}-a${NC} hoặc ${YELLOW}--audio${NC}: Phát trên Loa Laptop"

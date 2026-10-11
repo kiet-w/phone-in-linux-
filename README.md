@@ -133,21 +133,45 @@ phone-clip
 
 ---
 
-## 📋 Hướng Dẫn Copy - Paste & Gửi Ảnh
+### 6. `phone-snap` (Chụp màn hình điện thoại từ máy tính)
 
-### Copy Văn Bản (Text):
-* **Từ Laptop $\rightarrow$ Điện thoại:** Bôi đen text trên laptop $\rightarrow$ `Ctrl + C` $\rightarrow$ Click vào ô nhập trên điện thoại $\rightarrow$ Bấm `Ctrl + V` (hoặc `Alt + V`).
-* **Từ Điện thoại $\rightarrow$ Laptop:** Bôi đen chữ trên điện thoại $\rightarrow$ Chọn **Sao chép (Copy)** trong menu ngữ cảnh $\rightarrow$ Sang laptop bấm `Ctrl + V` ở bất kỳ đâu.
+```bash
+phone-snap
+```
+* Chụp ảnh khung hình hiện tại của điện thoại (hoặc màn hình ảo `phone-dual`).
+* Lưu thẳng file ảnh vào `~/Pictures/Phone/`.
+* Tự động copy sẵn vào Clipboard của máy tính (bấm `Ctrl + V` để dán ngay).
 
-### Gửi Ảnh & Ảnh Chụp Màn Hình (Screenshot):
-> **Lưu ý quan trọng:** Hệ điều hành Android không hỗ trợ dán file ảnh trực tiếp vào ô gõ chữ qua phím `Ctrl + V`. Thay vào đó, toàn bộ ảnh bạn chụp trên laptop đã được **tự động chuyển ngay vào Thư viện ảnh của điện thoại**!
+---
 
-1. **Cách gửi trong Teams / Zalo:**
-   * Để ô nhập tin nhắn trống (chưa gõ chữ).
-   * Bấm vào icon **Máy ảnh 📷** ngay cạnh ô nhập.
-   * Ảnh chụp màn hình từ laptop sẽ **nằm ngay đầu danh sách** $\rightarrow$ Chạm chọn và bấm Gửi!
-2. **Kéo & Thả (Drag & Drop):**
-   * Kéo thả trực tiếp file ảnh từ máy tính thả vào cửa sổ scrcpy của điện thoại.
+### 7. `optimize-phone` (Tối ưu hiệu năng HyperOS)
+
+```bash
+optimize-phone
+```
+* Khóa cứng 120Hz toàn hệ thống (không bao giờ tụt về 60Hz).
+* Đóng băng dịch vụ Joyose (loại bỏ bóp FPS và hạ xung khi ấm máy).
+* Chỉnh tốc độ hoạt ảnh Animation về 0.5x & MIUI Fast siêu mượt.
+* Tắt RAM ảo và kích hoạt Performance Mode.
+
+---
+
+## 📸 Đồng Bộ Ảnh Chụp 2 Chiều (Bi-directional Photo Sync)
+
+> **Tính năng độc quyền trong `phone-dual` và `phone`:**
+
+### 1. Khi chụp ảnh trên Điện thoại $\rightarrow$ Tự động lưu vào Laptop:
+* Khi bạn đang bật `phone-dual`: Bất cứ khi nào bạn **chụp ảnh bằng Camera** hoặc **chụp ảnh màn hình (Screenshot)** trên điện thoại:
+  * Ảnh sẽ **tự động được tải về máy tính** tại thư mục: `~/Pictures/Phone/`
+  * Ảnh được **tự động nạp sẵn vào Clipboard của Laptop** $\rightarrow$ Bạn chỉ cần bấm **`Ctrl + V`** ở bất kỳ phần mềm nào trên máy tính là dán ảnh được ngay!
+  * Máy tính sẽ phát thông báo Desktop báo ảnh đã sẵn sàng.
+
+### 2. Khi chụp ảnh trên Laptop $\rightarrow$ Tự động gửi sang Điện thoại:
+* Khi bạn chụp màn hình hoặc copy ảnh trên laptop: Ảnh được tự động đẩy ngay vào thư mục Thư viện ảnh của điện thoại (`/sdcard/Pictures/Screenshots/`).
+* Trong ô chat Teams / Zalo, chỉ cần để ô chat trống và bấm biểu tượng **Máy ảnh 📷**, ảnh từ laptop sẽ nằm ngay đầu danh sách!
+
+### 3. Kéo & Thả (Drag & Drop):
+* Kéo thả trực tiếp file ảnh từ máy tính thả vào cửa sổ scrcpy của điện thoại.
 
 ---
 

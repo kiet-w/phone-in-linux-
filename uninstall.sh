@@ -11,6 +11,8 @@ rm -f "$HOME/.local/bin/phone-tablet"
 rm -f "$HOME/.local/bin/phone-reset"
 rm -f "$HOME/.local/bin/phone-clip"
 rm -f "$HOME/.local/bin/phone-paste"
+rm -f "$HOME/.local/bin/phone-snap"
+rm -f "$HOME/.local/bin/optimize-phone"
 
 rm -f "$HOME/.local/share/applications/phone-dual.desktop"
 rm -f "$HOME/.local/share/applications/phone.desktop"

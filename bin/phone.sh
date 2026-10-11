@@ -58,5 +58,49 @@ else
     echo "📱 Âm thanh: Phát trực tiếp trên Loa Điện thoại"
 fi
 
+PHONE_SAVE_DIR="$HOME/Pictures/Phone"
+mkdir -p "$PHONE_SAVE_DIR"
+
+adb -s "$CONNECTED_DEV" shell "touch /sdcard/.phone_sync_marker" 2>/dev/null
+
+PHONE_PULL_WATCHER_PID=""
+(
+    while true; do
+        sleep 1.5
+        NEW_FILES=$(adb -s "$CONNECTED_DEV" shell "find /sdcard/DCIM/Screenshots /sdcard/DCIM/Camera /sdcard/Pictures/Screenshots -maxdepth 1 -type f -newer /sdcard/.phone_sync_marker 2>/dev/null" 2>/dev/null | tr -d '\r')
+        
+        if [ -n "$NEW_FILES" ]; then
+            adb -s "$CONNECTED_DEV" shell "touch /sdcard/.phone_sync_marker" 2>/dev/null
+            
+            while IFS= read -r f; do
+                [ -z "$f" ] && continue
+                FILENAME=$(basename "$f")
+                if [[ "$FILENAME" == laptop_screenshot_* ]]; then
+                    continue
+                fi
+                if [[ "$FILENAME" =~ \.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)$ ]]; then
+                    LOCAL_FILE="$PHONE_SAVE_DIR/$FILENAME"
+                    adb -s "$CONNECTED_DEV" pull "$f" "$LOCAL_FILE" >/dev/null 2>&1
+                    if [ -s "$LOCAL_FILE" ]; then
+                        if command -v wl-copy >/dev/null 2>&1; then
+                            if [[ "$FILENAME" =~ \.(jpg|jpeg|JPG|JPEG)$ ]]; then
+                                wl-copy -t image/jpeg < "$LOCAL_FILE" 2>/dev/null || true
+                            else
+                                wl-copy -t image/png < "$LOCAL_FILE" 2>/dev/null || true
+                            fi
+                        elif command -v xclip >/dev/null 2>&1; then
+                            xclip -selection clipboard -t image/png -i "$LOCAL_FILE" 2>/dev/null || true
+                        fi
+                        command -v notify-send >/dev/null 2>&1 && notify-send "📱 Phone Mirror" "📸 Đã lưu ảnh từ điện thoại vào máy tính!\n📁 $FILENAME (Đã copy vào Clipboard)" -i camera-photo
+                    fi
+                fi
+            done <<< "$NEW_FILES"
+        fi
+    done
+) &
+PHONE_PULL_WATCHER_PID=$!
+
+trap "kill $PHONE_PULL_WATCHER_PID 2>/dev/null; adb -s \"$CONNECTED_DEV\" shell \"rm -f /sdcard/.phone_sync_marker\" 2>/dev/null" EXIT INT TERM
+
 echo "🚀 Khởi chạy phản chiếu màn hình điện thoại..."
 scrcpy -s "$CONNECTED_DEV" "${OPTS[@]}"
