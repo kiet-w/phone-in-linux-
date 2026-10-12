@@ -1,36 +1,18 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # PHONE MIRROR - Phản chiếu màn hình điện thoại mượt mà 60 FPS chống giật
-# - Tự động dò tìm điện thoại qua Wi-Fi (mDNS / IP) hoặc cáp USB
-# - Cấu hình triệt tiêu rung giật (jitter buffer 25ms, max-fps 60, codec H.264 phần cứng)
-# - Bàn phím phần cứng UHID gõ tiếng Việt Telex
-# - Tự động đồng bộ Clipboard 2 chiều giữa điện thoại và máy tính
-# - Mặc định phát âm thanh trên điện thoại (--no-audio)
 # ==============================================================================
 
-set -e
-
-echo "Đang tìm điện thoại qua mạng Wi-Fi hoặc USB..."
-
-CONNECTED_DEV=$(adb devices | grep -E "(:[0-9]+|_tcp)\s+device" | head -n 1 | awk '{print $1}')
-if [ -z "$CONNECTED_DEV" ]; then
-    MDNS_DEV=$(adb mdns services 2>/dev/null | grep "_adb-tls-connect" | head -n 1 | awk '{print $NF}')
-    if [ -n "$MDNS_DEV" ]; then
-        echo "Đã tìm thấy điện thoại tại $MDNS_DEV, đang kết nối..."
-        adb connect "$MDNS_DEV" >/dev/null 2>&1
-        CONNECTED_DEV="$MDNS_DEV"
-    fi
-fi
-if [ -z "$CONNECTED_DEV" ]; then
-    USB_DEV=$(adb devices | grep -v "List" | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
-    if [ -n "$USB_DEV" ]; then
-        CONNECTED_DEV="$USB_DEV"
-    fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/get-device.sh" ]; then
+    source "$SCRIPT_DIR/get-device.sh"
+    CONNECTED_DEV=$(find_and_connect_device "$1")
+else
+    CONNECTED_DEV=$(adb devices | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
 fi
 
 if [ -z "$CONNECTED_DEV" ]; then
-    echo "⚠️ Không tìm thấy điện thoại qua Wi-Fi hoặc USB!"
-    echo "👉 Hãy đảm bảo điện thoại đã bật 'Gỡ lỗi qua Wi-Fi' (Wireless Debugging) hoặc cắm cáp USB."
+    echo "⚠️ Không tìm thấy thiết bị kết nối!"
     exit 1
 fi
 
@@ -61,7 +43,7 @@ fi
 PHONE_SAVE_DIR="$HOME/Pictures/Phone"
 mkdir -p "$PHONE_SAVE_DIR"
 
-adb -s "$CONNECTED_DEV" shell "touch /sdcard/.phone_sync_marker" 2>/dev/null
+adb -s "$CONNECTED_DEV" shell "touch /sdcard/.phone_sync_marker" 2>/dev/null || true
 
 PHONE_PULL_WATCHER_PID=""
 (
@@ -70,7 +52,7 @@ PHONE_PULL_WATCHER_PID=""
         NEW_FILES=$(adb -s "$CONNECTED_DEV" shell "find /sdcard/DCIM/Screenshots /sdcard/DCIM/Camera /sdcard/Pictures/Screenshots -maxdepth 1 -type f -newer /sdcard/.phone_sync_marker 2>/dev/null" 2>/dev/null | tr -d '\r')
         
         if [ -n "$NEW_FILES" ]; then
-            adb -s "$CONNECTED_DEV" shell "touch /sdcard/.phone_sync_marker" 2>/dev/null
+            adb -s "$CONNECTED_DEV" shell "touch /sdcard/.phone_sync_marker" 2>/dev/null || true
             
             while IFS= read -r f; do
                 [ -z "$f" ] && continue

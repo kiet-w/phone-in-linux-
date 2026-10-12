@@ -3,18 +3,16 @@
 # PHONE SNAP - Chụp ảnh màn hình điện thoại từ máy tính và lưu thẳng vào ~/Pictures/Phone
 # ==============================================================================
 
-CONNECTED_DEV=$(adb devices | grep -E "(:[0-9]+|_tcp)\s+device" | head -n 1 | awk '{print $1}')
-if [ -z "$CONNECTED_DEV" ]; then
-    MDNS_DEV=$(adb mdns services 2>/dev/null | grep "_adb-tls-connect" | head -n 1 | awk '{print $NF}')
-    [ -n "$MDNS_DEV" ] && CONNECTED_DEV="$MDNS_DEV"
-fi
-if [ -z "$CONNECTED_DEV" ]; then
-    USB_DEV=$(adb devices | grep -v "List" | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
-    [ -n "$USB_DEV" ] && CONNECTED_DEV="$USB_DEV"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/get-device.sh" ]; then
+    source "$SCRIPT_DIR/get-device.sh"
+    CONNECTED_DEV=$(find_and_connect_device "$1")
+else
+    CONNECTED_DEV=$(adb devices | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
 fi
 
 if [ -z "$CONNECTED_DEV" ]; then
-    echo "⚠️ Không tìm thấy điện thoại qua Wi-Fi hoặc USB!"
+    echo "⚠️ Không tìm thấy thiết bị kết nối!"
     exit 1
 fi
 

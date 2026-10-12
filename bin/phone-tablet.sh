@@ -3,29 +3,22 @@
 # PHONE TABLET - Biến điện thoại thành máy tính bảng (Tablet 2400x1080)
 # ==============================================================================
 
-set -e
-
-CONNECTED_DEV=$(adb devices | grep -E "(:[0-9]+|_tcp)\s+device" | head -n 1 | awk '{print $1}')
-if [ -z "$CONNECTED_DEV" ]; then
-    MDNS_DEV=$(adb mdns services 2>/dev/null | grep "_adb-tls-connect" | head -n 1 | awk '{print $NF}')
-    if [ -n "$MDNS_DEV" ]; then
-        adb connect "$MDNS_DEV" >/dev/null 2>&1
-        CONNECTED_DEV="$MDNS_DEV"
-    fi
-fi
-if [ -z "$CONNECTED_DEV" ]; then
-    USB_DEV=$(adb devices | grep -v "List" | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
-    [ -n "$USB_DEV" ] && CONNECTED_DEV="$USB_DEV"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/get-device.sh" ]; then
+    source "$SCRIPT_DIR/get-device.sh"
+    CONNECTED_DEV=$(find_and_connect_device "$1")
+else
+    CONNECTED_DEV=$(adb devices | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
 fi
 
 if [ -z "$CONNECTED_DEV" ]; then
-    echo "⚠️ Không tìm thấy điện thoại qua Wi-Fi hoặc USB!"
+    echo "⚠️ Không tìm thấy thiết bị kết nối!"
     exit 1
 fi
 
 echo "📐 Đang chuyển điện thoại sang giao diện Máy tính bảng (Tablet 2400x1080)..."
-adb -s "$CONNECTED_DEV" shell wm size 2400x1080 2>/dev/null
-adb -s "$CONNECTED_DEV" shell wm density 280 2>/dev/null
+adb -s "$CONNECTED_DEV" shell wm size 2400x1080 2>/dev/null || true
+adb -s "$CONNECTED_DEV" shell wm density 280 2>/dev/null || true
 
 ENABLE_AUDIO=false
 if [[ "$*" =~ "--audio" || "$*" =~ "-a" ]]; then

@@ -14,30 +14,86 @@
 # - Kéo thả (Drag & Drop) ảnh/file trực tiếp vào điện thoại
 # ==============================================================================
 
-set -e
+# Hàm kiểm tra trạng thái thiết bị thực sự kết nối và sẵn sàng
+is_device_ready() {
+    local target="$1"
+    [ -n "$target" ] && [ "$(adb -s "$target" get-state 2>/dev/null)" = "device" ]
+}
 
-# Tìm thiết bị Android kết nối (Wi-Fi hoặc USB)
-CONNECTED_DEV=$(adb devices | grep -E "(:[0-9]+|_tcp)\s+device" | head -n 1 | awk '{print $1}')
+# 1. Kiểm tra các thiết bị ĐÃ kết nối và sẵn sàng
+CONNECTED_DEV=""
+READY_DEVS=($(adb devices | grep -E "\s+device$" | awk '{print $1}'))
+
+if [ ${#READY_DEVS[@]} -eq 1 ]; then
+    CONNECTED_DEV="${READY_DEVS[0]}"
+elif [ ${#READY_DEVS[@]} -gt 1 ]; then
+    echo "📱 Phát hiện nhiều thiết bị Android đang kết nối:"
+    for i in "${!READY_DEVS[@]}"; do
+        DEV_NAME=$(adb -s "${READY_DEVS[$i]}" shell getprop ro.product.model 2>/dev/null || echo "${READY_DEVS[$i]}")
+        echo "  $((i+1))) ${READY_DEVS[$i]} ($DEV_NAME)"
+    done
+    read -rp "👉 Chọn thiết bị bạn muốn dùng [1]: " DEV_IDX
+    DEV_IDX="${DEV_IDX:-1}"
+    CONNECTED_DEV="${READY_DEVS[$((DEV_IDX-1))]}"
+fi
+
+# 2. Nếu chưa có thiết bị nào kết nối: Dò tìm qua mDNS
 if [ -z "$CONNECTED_DEV" ]; then
-    MDNS_DEV=$(adb mdns services 2>/dev/null | grep "_adb-tls-connect" | head -n 1 | awk '{print $NF}')
-    if [ -n "$MDNS_DEV" ]; then
-        echo "Đang kết nối tới $MDNS_DEV..."
-        adb connect "$MDNS_DEV" >/dev/null 2>&1
-        CONNECTED_DEV="$MDNS_DEV"
+    # Thử kết nối với thiết bị Xiaomi quen thuộc trước nếu có
+    XIAOMI_MDNS=$(adb mdns services 2>/dev/null | grep "adb-y5byr4qszx5xxwga-auiTWP" | head -n 1 | awk '{print $NF}')
+    if [ -n "$XIAOMI_MDNS" ]; then
+        echo "Đang thử kết nối tới điện thoại của bạn tại $XIAOMI_MDNS..."
+        adb connect "$XIAOMI_MDNS" >/dev/null 2>&1
+        if is_device_ready "$XIAOMI_MDNS"; then
+            CONNECTED_DEV="$XIAOMI_MDNS"
+        fi
+    fi
+    
+    # Nếu chưa được, duyệt qua các dịch vụ mDNS khác và kiểm tra kết nối thực tế
+    if [ -z "$CONNECTED_DEV" ]; then
+        MDNS_LIST=($(adb mdns services 2>/dev/null | grep "_adb-tls-connect" | awk '{print $NF}'))
+        for endpoint in "${MDNS_LIST[@]}"; do
+            echo "Đang kiểm tra kết nối tới $endpoint..."
+            adb connect "$endpoint" >/dev/null 2>&1
+            if is_device_ready "$endpoint"; then
+                CONNECTED_DEV="$endpoint"
+                break
+            fi
+        done
     fi
 fi
-if [ -z "$CONNECTED_DEV" ]; then
-    USB_DEV=$(adb devices | grep -v "List" | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
-    if [ -n "$USB_DEV" ]; then
-        CONNECTED_DEV="$USB_DEV"
-    fi
-fi
 
-if [ -z "$CONNECTED_DEV" ]; then
-    echo "⚠️ Không tìm thấy điện thoại qua Wi-Fi hoặc USB!"
-    echo "👉 Hãy đảm bảo điện thoại đã bật 'Gỡ lỗi qua Wi-Fi' (Wireless Debugging) hoặc cắm cáp USB."
-    exit 1
-fi
+# 3. Nếu vẫn chưa kết nối được: Cho phép nhập IP:Port hoặc hướng dẫn cắm cáp USB
+while [ -z "$CONNECTED_DEV" ] || ! is_device_ready "$CONNECTED_DEV"; do
+    echo "=========================================================="
+    echo "⚠️ Chưa tìm thấy hoặc chưa kết nối được với điện thoại!"
+    echo "👉 Hãy đảm bảo:"
+    echo "   1) Cắm cáp USB nối điện thoại vào laptop (Khuyên dùng khi ở mạng công ty / trường học)"
+    echo "   HOẶC"
+    echo "   2) Trên điện thoại: Vào Cài đặt > Tùy chọn nhà phát triển > Bật 'Gỡ lỗi không dây'"
+    echo "=========================================================="
+    read -rp "👉 Nhập IP & Cổng hiển thị trên điện thoại (ví dụ: 10.45.111.225:45129) hoặc nhấn Enter để quét lại: " USER_INPUT_DEV
+    
+    if [ -n "$USER_INPUT_DEV" ]; then
+        echo "Đang kết nối tới $USER_INPUT_DEV..."
+        adb connect "$USER_INPUT_DEV"
+        if is_device_ready "$USER_INPUT_DEV"; then
+            CONNECTED_DEV="$USER_INPUT_DEV"
+            break
+        else
+            echo "❌ Không thể kết nối tới $USER_INPUT_DEV. Vui lòng kiểm tra lại IP/Cổng và xác nhận 'Cho phép' trên màn hình điện thoại!"
+        fi
+    else
+        # Thử kiểm tra lại thiết bị kết nối (ví dụ người dùng vừa cắm cáp USB hoặc vừa bật Wi-Fi debugging)
+        NEW_DEV=$(adb devices | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
+        if [ -n "$NEW_DEV" ]; then
+            CONNECTED_DEV="$NEW_DEV"
+            break
+        fi
+    fi
+done
+
+echo "✅ Đã kết nối thành công với thiết bị: $CONNECTED_DEV"
 
 # Xử lý cờ tuỳ chọn
 FORCE_ORIENTATION=""
@@ -182,16 +238,16 @@ echo "📐 Độ phân giải khởi đầu: $DISPLAY_RES ($ORIENTATION_TEXT)"
 echo "✨ Kéo chuột ở góc cửa sổ để mở rộng Ngang/Dọc tuỳ ý (Flex Responsive)!"
 
 # Tối ưu hóa cài đặt Android cho màn hình ngoài
-adb -s "$CONNECTED_DEV" shell "settings put global enable_freeform_support 0" 2>/dev/null
-adb -s "$CONNECTED_DEV" shell "settings put global force_resizable_activities 1" 2>/dev/null
-adb -s "$CONNECTED_DEV" shell "settings put global force_desktop_mode_on_external_displays 1" 2>/dev/null
-adb -s "$CONNECTED_DEV" shell "appops set com.android.shell READ_CLIPBOARD allow" 2>/dev/null
-adb -s "$CONNECTED_DEV" shell "appops set com.android.shell WRITE_CLIPBOARD allow" 2>/dev/null
+adb -s "$CONNECTED_DEV" shell "settings put global enable_freeform_support 0" 2>/dev/null || true
+adb -s "$CONNECTED_DEV" shell "settings put global force_resizable_activities 1" 2>/dev/null || true
+adb -s "$CONNECTED_DEV" shell "settings put global force_desktop_mode_on_external_displays 1" 2>/dev/null || true
+adb -s "$CONNECTED_DEV" shell "appops set com.android.shell READ_CLIPBOARD allow" 2>/dev/null || true
+adb -s "$CONNECTED_DEV" shell "appops set com.android.shell WRITE_CLIPBOARD allow" 2>/dev/null || true
 
 if [ -n "$PKG" ]; then
-    adb -s "$CONNECTED_DEV" shell "am compat enable OVERRIDE_ANY_ORIENTATION $PKG" 2>/dev/null
-    adb -s "$CONNECTED_DEV" shell "am compat enable OVERRIDE_ENABLE_COMPAT_IGNORE_REQUESTED_ORIENTATION $PKG" 2>/dev/null
-    adb -s "$CONNECTED_DEV" shell "am compat enable OVERRIDE_ANY_ORIENTATION_TO_USER $PKG" 2>/dev/null
+    adb -s "$CONNECTED_DEV" shell "am compat enable OVERRIDE_ANY_ORIENTATION $PKG" 2>/dev/null || true
+    adb -s "$CONNECTED_DEV" shell "am compat enable OVERRIDE_ENABLE_COMPAT_IGNORE_REQUESTED_ORIENTATION $PKG" 2>/dev/null || true
+    adb -s "$CONNECTED_DEV" shell "am compat enable OVERRIDE_ANY_ORIENTATION_TO_USER $PKG" 2>/dev/null || true
 fi
 
 # Tiến trình nền giám sát và cấu hình các màn hình ảo mới (Chạy 1 lần duy nhất để chống giật cảm ứng)

@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # OPTIMIZE PHONE - Tối ưu hóa tối đa hiệu năng Xiaomi HyperOS / Redmi / POCO
-# - Ép 120Hz cố định toàn hệ thống (min/peak/user refresh rate)
-# - Chặn đứng dịch vụ Joyose (Gỡ bỏ bóp FPS và hạ xung nhiệt độ của Xiaomi)
-# - Chỉnh Animation về 0.5x & Tốc độ chuyển cảnh HyperOS sang Nhanh (Fast)
-# - Tắt mở rộng bộ nhớ (RAM ảo) khử micro-stutter
-# - Kích hoạt chế độ Hiệu suất cao (Performance Mode)
-# - Bật đình chỉ ứng dụng lưu trong bộ nhớ đệm (Suspend cached apps)
 # ==============================================================================
 
 GREEN='\033[0;32m'
@@ -19,24 +13,16 @@ echo -e "${BLUE}================================================================
 echo -e "${GREEN}🚀 ĐANG KẾT NỐI VÀ TỐI ƯU HÓA ĐIỆN THOẠI XIAOMI HYPEROS...${NC}"
 echo -e "${BLUE}================================================================${NC}"
 
-# Tìm thiết bị
-CONNECTED_DEV=$(adb devices | grep -E "(:[0-9]+|_tcp)\s+device" | head -n 1 | awk '{print $1}')
-if [ -z "$CONNECTED_DEV" ]; then
-    MDNS_DEV=$(adb mdns services 2>/dev/null | grep "_adb-tls-connect" | head -n 1 | awk '{print $NF}')
-    if [ -n "$MDNS_DEV" ]; then
-        echo "Đang kết nối tới $MDNS_DEV..."
-        adb connect "$MDNS_DEV" >/dev/null 2>&1
-        CONNECTED_DEV="$MDNS_DEV"
-    fi
-fi
-if [ -z "$CONNECTED_DEV" ]; then
-    USB_DEV=$(adb devices | grep -v "List" | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
-    [ -n "$USB_DEV" ] && CONNECTED_DEV="$USB_DEV"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/get-device.sh" ]; then
+    source "$SCRIPT_DIR/get-device.sh"
+    CONNECTED_DEV=$(find_and_connect_device "$1")
+else
+    CONNECTED_DEV=$(adb devices | grep -E "\s+device$" | head -n 1 | awk '{print $1}')
 fi
 
 if [ -z "$CONNECTED_DEV" ]; then
     echo -e "${RED}⚠️ Chưa tìm thấy điện thoại kết nối!${NC}"
-    echo -e "👉 Vui lòng mở điện thoại: Vào Cài đặt > Tùy chọn nhà phát triển > Bật 'Gỡ lỗi qua Wi-Fi' (hoặc cắm cáp USB)."
     exit 1
 fi
 
